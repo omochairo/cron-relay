@@ -1,0 +1,50 @@
+name: relay
+
+# Cloudflare Worker (worker/) が 15 分ごとに dispatch する。起こされたら監視 workflow を
+# 固定の引数で dispatch する (omochairo/amazon-home-ops#84)。
+#
+# **inputs を足さないこと。** Worker 側の PAT が漏れても、この workflow を固定の動作で
+# 回されるだけで済むのは入力が無いから。入力を取ると、それを経由して監視先 repo を
+# 任意の入力で dispatch させる道ができる (監視先の workflow が入力をシェルへ直接
+# 展開していれば、そこから secrets を抜かれる。README の「なぜ中継を挟むか」)。
+
+on:
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: relay
+  cancel-in-progress: false
+
+jobs:
+  relay:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Dispatch monitors
+        env:
+          # fine-grained PAT: repo = amazon, amazon-home-ops / Actions: Read and write のみ
+          GH_TOKEN: ${{ secrets.MONITOR_DISPATCH_PAT }}
+        run: |
+          set -uo pipefail
+          if [ -z "${GH_TOKEN}" ]; then
+            echo "::error::MONITOR_DISPATCH_PAT が未設定"
+            exit 1
+          fi
+          # repo  workflow
+          #   90-heartbeat-check  自宅ワーカーの dead-man's switch (設計 15 分)
+          #   53-origin-failover  navi のオリジン障害で待機系へ倒す (入力なし = 判定して倒す)
+          TARGETS='omochairo/amazon-home-ops 90-heartbeat-check.yml
+          omochairo/amazon 53-origin-failover.yml'
+          failed=0
+          while read -r repo wf; do
+            [ -n "${repo}" ] || continue
+            if gh api --method POST "repos/${repo}/actions/workflows/${wf}/dispatches" -f ref=main >/dev/null; then
+              echo "dispatched ${wf}"
+            else
+              echo "::error::dispatch failed: ${wf}"
+              failed=1
+            fi
+          done <<< "${TARGETS}"
+          exit "${failed}"

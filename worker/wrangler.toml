@@ -1,0 +1,12 @@
+name = "omochairo-cron-relay"
+main = "worker.js"
+compatibility_date = "2026-09-01"
+# HTTP の入口は持たない (scheduled のみ)。workers.dev の公開 URL も出さない。
+workers_dev = false
+
+[triggers]
+crons = ["*/15 * * * *"]
+
+# secrets (npx wrangler@4 secret put <NAME>。値はここにも repo にも書かない):
+#   GH_DISPATCH_TOKEN  fine-grained PAT。対象 repo = cron-relay のみ / 権限 = Actions: Read and write のみ
+#   NTFY_ALERT_TOPIC   dispatch 失敗の通知先 (amazon-home-ops の 90-heartbeat-check と同じ alert topic)

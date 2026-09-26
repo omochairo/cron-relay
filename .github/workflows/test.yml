@@ -1,0 +1,19 @@
+name: test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  worker:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+      # ubuntu-latest 同梱の node を使う (node:test と ESM があれば足りる)
+      - run: node --version
+      - run: node --test worker/worker.test.mjs
