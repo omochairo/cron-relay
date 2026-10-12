@@ -1,0 +1,3 @@
+# wrangler のローカルキャッシュ (Cloudflare のアカウント情報を含む。public repo なので絶対に載せない)
+.wrangler/
+node_modules/

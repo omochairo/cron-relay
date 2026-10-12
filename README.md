@@ -8,7 +8,7 @@ Cloudflare Worker (Cron */15)
    ▼
 cron-relay / relay.yml   ← 入力なし・起こす先は固定
    │ workflow_dispatch (PAT-B: GitHub secret。amazon / amazon-home-ops の Actions: write)
-   ├─▶ amazon-home-ops / 90-heartbeat-check.yml   自宅ワーカーの dead-man's switch
+   ├─▶ amazon-home-ops / 90-heartbeat-check.yml   自宅ワーカーの dead-man's switch (1 時間毎に間引く。relay.yml の注記)
    └─▶ amazon / 53-origin-failover.yml            navi のオリジン障害で待機系へ倒す
 ```
 
