@@ -33,7 +33,7 @@ jobs:
             exit 1
           fi
           # repo  workflow  最小間隔 (分。0 = 毎回起こす)
-          #   90-heartbeat-check  自宅ワーカーの dead-man's switch。**約 12 時間毎に間引く**
+          #   90-heartbeat-check  自宅ワーカーの dead-man's switch。**約 12 時間毎に間引く** (schedule が本線)
           #   53-origin-failover  navi のオリジン障害で待機系へ倒す (入力なし = 判定して倒す)
           #
           # 90-heartbeat-check を間引く理由: amazon-home-ops は private なので、GitHub ホスト
@@ -45,8 +45,9 @@ jobs:
           # 毎回直近の beat (STALE_WINDOW) を見て判定する作りなので、間隔を伸ばしても
           # 判定は変わらず、検知が遅れるだけ。
           # 起動時刻の分で判定しないのは、relay 自体の起動遅延で取りこぼしや二重起動が起きるため。
-          # 705 分 (= 12 時間 - 15 分) にしているのは、15 分刻みの起動の揺れで 720 分ちょうどに
-          # 届かず、次の枠まで 1 回飛ぶのを避けるため。
+          # 780 分 (= 13 時間) にしているのは、schedule (12 時間毎) より先に起こして二重に
+          # 走らせないため。720 分ちょうどだと、schedule の発火の遅れの間に中継が先回りする。
+          # schedule が 1 時間以上来なかったときだけ、中継が代わりに起こす。
           # 前回の run が読めないときは起こす (監視を止める側に倒さない)。
           #
           # **一時停止**: 最小間隔を持つ対象は、監視先の workflow が無効 (disabled_*) なら起こさない。
@@ -55,7 +56,7 @@ jobs:
           # 状態が読めないときは起こす側に倒す。
           # 53-origin-failover は public の amazon で分数がかからないので 15 分毎のまま、一時停止の
           # 対象にもしない (誤って無効化されたら dispatch が失敗して relay が赤になる方がよい)。
-          TARGETS='omochairo/amazon-home-ops 90-heartbeat-check.yml 705
+          TARGETS='omochairo/amazon-home-ops 90-heartbeat-check.yml 780
           omochairo/amazon 53-origin-failover.yml 0'
           now="$(date -u +%s)"
           failed=0
